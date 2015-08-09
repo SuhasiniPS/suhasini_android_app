@@ -66,7 +66,6 @@ public class HomePageActivity extends ListActivity {
 			@Override
 			public void onClick(View v) {
 				new GetContacts().execute();
-				displayContacts();
 			}
 		});
 	}
