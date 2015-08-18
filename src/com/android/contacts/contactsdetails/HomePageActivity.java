@@ -13,6 +13,7 @@ import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.OperationApplicationException;
 import android.database.Cursor;
 import android.os.AsyncTask;
@@ -25,9 +26,9 @@ import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ListAdapter;
-import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
@@ -66,6 +67,9 @@ public class HomePageActivity extends ListActivity {
 			@Override
 			public void onClick(View v) {
 				new GetContacts().execute();
+				Intent intent = getIntent();
+			    finish();
+			    startActivity(intent);
 			}
 		});
 	}
@@ -109,19 +113,22 @@ public class HomePageActivity extends ListActivity {
 						// Phone node is JSON Object
 						JSONObject phone = c.getJSONObject(TAG_PH);
 						String mobile = phone.getString(TAG_PHONE);
-
+						
+						// Write the contact in mobile contacts
+						WritePhoneContact(name, mobile, email, cntx);
+						
 						// tmp hashmap for single contact
-						HashMap<String, String> contact = new HashMap<String, String>();
+						HashMap<String, String> jsoncontact = new HashMap<String, String>();
 
 						// adding each child node to HashMap key => value
-						contact.put(TAG_ID, id);
-						contact.put(TAG_NAME, name);
-						contact.put(TAG_EMAIL, email);
-						contact.put(TAG_PHONE, mobile);
+						jsoncontact.put(TAG_ID, id);
+						jsoncontact.put(TAG_NAME, name);
+						jsoncontact.put(TAG_EMAIL, email);
+						jsoncontact.put(TAG_PHONE, mobile);
 
-						// adding contact to contact list
-						contactList.add(contact);
-						WritePhoneContact(name, mobile, email, cntx);						
+						// adding json contact to contact list
+						contactList.add(jsoncontact);
+
 					}
 				} catch (JSONException e) {
 					e.printStackTrace();
@@ -182,7 +189,6 @@ public class HomePageActivity extends ListActivity {
 					}
 					pCur.close();
 
-					// get email and type
 					Cursor emailCur = cr.query(
 							ContactsContract.CommonDataKinds.Email.CONTENT_URI,
 							null,
@@ -240,14 +246,12 @@ public class HomePageActivity extends ListActivity {
 		// contacts database.
 		cntProOper.add(ContentProviderOperation
 					.newInsert(RawContacts.CONTENT_URI)
-						// Step1
 					.withValue(RawContacts.ACCOUNT_TYPE, null)
 					.withValue(RawContacts.ACCOUNT_NAME, null).build());
 		if ((displayName != null) && (number != null) && (emailID != null)) {
 			// Display name will be inserted in ContactsContract.Data table
 			cntProOper.add(ContentProviderOperation
 					.newInsert(Data.CONTENT_URI)
-					// Step2
 					.withValueBackReference(Data.RAW_CONTACT_ID, contactIndex)
 					.withValue(Data.MIMETYPE, StructuredName.CONTENT_ITEM_TYPE)
 					.withValue(StructuredName.DISPLAY_NAME, displayName) // Name of the contact
@@ -256,7 +260,6 @@ public class HomePageActivity extends ListActivity {
 			// Mobile number will be inserted in ContactsContract.Data table
 			cntProOper.add(ContentProviderOperation
 					.newInsert(Data.CONTENT_URI)
-					// Step 3
 					.withValueBackReference(
 							ContactsContract.Data.RAW_CONTACT_ID, contactIndex)
 					.withValue(Data.MIMETYPE, Phone.CONTENT_ITEM_TYPE)
@@ -267,17 +270,10 @@ public class HomePageActivity extends ListActivity {
 			cntProOper
 					.add(ContentProviderOperation
 							.newInsert(ContactsContract.Data.CONTENT_URI)
-							.withValueBackReference(
-									ContactsContract.Data.RAW_CONTACT_ID, 0)
-							.withValue(
-									ContactsContract.Data.MIMETYPE,
-									ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
-							.withValue(
-									ContactsContract.CommonDataKinds.Email.DATA,
-									emailID)
-							.withValue(
-									ContactsContract.CommonDataKinds.Email.TYPE,
-									ContactsContract.CommonDataKinds.Email.TYPE_WORK)
+							.withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+							.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
+							.withValue(ContactsContract.CommonDataKinds.Email.DATA, emailID)
+							.withValue(ContactsContract.CommonDataKinds.Email.TYPE,	ContactsContract.CommonDataKinds.Email.TYPE_WORK)
 							.build());
 			try {
 				// We will do batch operation to insert all above data
@@ -300,4 +296,5 @@ public class HomePageActivity extends ListActivity {
 		}
 	}
 
+	
 }
