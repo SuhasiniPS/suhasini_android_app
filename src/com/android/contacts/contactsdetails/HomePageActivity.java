@@ -67,9 +67,11 @@ public class HomePageActivity extends ListActivity {
 			@Override
 			public void onClick(View v) {
 				new GetContacts().execute();
+
 				Intent intent = getIntent();
 			    finish();
 			    startActivity(intent);
+				Toast.makeText(getApplicationContext(), "Please wait till contacts get update", Toast.LENGTH_LONG).show();
 			}
 		});
 	}
@@ -116,18 +118,6 @@ public class HomePageActivity extends ListActivity {
 						
 						// Write the contact in mobile contacts
 						WritePhoneContact(name, mobile, email, cntx);
-						
-						// tmp hashmap for single contact
-						HashMap<String, String> jsoncontact = new HashMap<String, String>();
-
-						// adding each child node to HashMap key => value
-						jsoncontact.put(TAG_ID, id);
-						jsoncontact.put(TAG_NAME, name);
-						jsoncontact.put(TAG_EMAIL, email);
-						jsoncontact.put(TAG_PHONE, mobile);
-
-						// adding json contact to contact list
-						contactList.add(jsoncontact);
 
 					}
 				} catch (JSONException e) {
