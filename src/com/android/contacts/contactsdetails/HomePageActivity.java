@@ -2,6 +2,7 @@ package com.android.contacts.contactsdetails;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,7 +16,9 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.OperationApplicationException;
+import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.RemoteException;
@@ -25,10 +28,15 @@ import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.provider.ContactsContract.Data;
 import android.provider.ContactsContract.RawContacts;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.Button;
 import android.widget.ListAdapter;
+import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
@@ -46,32 +54,56 @@ public class HomePageActivity extends ListActivity {
 	private static final String TAG_PHONE = "mobile";
 
 	private static String url = "http://api.androidhive.info/contacts/";
-	Button syncBtn;
+	Button syncBtn, logoutBtn;
 	JSONArray contacts = null;
 	ArrayList<HashMap<String, String>> contactList;
 	ListAdapter adapter = null;
+	ListView lv = null;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_home_page);
-
+		
+		lv = (ListView) findViewById(android.R.id.list);
 		contactList = new ArrayList<HashMap<String, String>>();
 
 		getListView();
 
 		displayContacts();
-
+		
+		lv.setOnItemClickListener(new OnItemClickListener() {
+			@SuppressWarnings("unchecked")
+			@Override
+		    public void onItemClick(AdapterView<?> parent, View view, int position,long arg3) {
+	
+				view.setSelected(true);
+				Map<String, String> itemValue = new HashMap<String, String>(); 
+				itemValue  =  (HashMap<String, String>)lv.getItemAtPosition(position);
+				String mobile = itemValue.get(TAG_PHONE);
+				Intent callIntent = new Intent(Intent.ACTION_CALL);
+				callIntent.setData(Uri.parse("tel:"+mobile));
+				startActivity(callIntent);				
+		    }
+		});
 		syncBtn = (Button) findViewById(R.id.syncBtn);
 
 		syncBtn.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				new GetContacts().execute();
-
-				Intent intent = getIntent();
+				
+			}
+		});
+		logoutBtn = (Button) findViewById(R.id.logoutBtn);
+		logoutBtn.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				SharedPreferences sharedpreferences = getSharedPreferences(MainActivity.MyPREFERENCES, Context.MODE_PRIVATE);
+			    SharedPreferences.Editor editor = sharedpreferences.edit();
+			    editor.clear();
+			    editor.commit();	
 			    finish();
-			    startActivity(intent);
-				Toast.makeText(getApplicationContext(), "Please wait till contacts get update", Toast.LENGTH_LONG).show();
 			}
 		});
 	}
@@ -135,17 +167,10 @@ public class HomePageActivity extends ListActivity {
 			super.onPostExecute(result);
 			// Dismiss the progress dialog
 			if (pDialog.isShowing())
-				pDialog.dismiss();
-			
-			/**
-			 * Updating parsed JSON data into ListView
-			 * */
-		adapter = new SimpleAdapter(HomePageActivity.this,
-					contactList, R.layout.list_item, new String[] { TAG_NAME,
-							TAG_EMAIL, TAG_PHONE }, new int[] { R.id.listname,
-							R.id.listemail, R.id.listmobile });
+				contactList.clear();
+			displayContacts();
 
-			setListAdapter(adapter);
+				pDialog.dismiss();
 		}
 	}
 
@@ -175,7 +200,6 @@ public class HomePageActivity extends ListActivity {
 						phoneno = pCur
 								.getString(pCur
 										.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
-						System.out.println("Phone Number :" + " " + phoneno);
 					}
 					pCur.close();
 
@@ -286,5 +310,32 @@ public class HomePageActivity extends ListActivity {
 		}
 	}
 
+	private void resume() {
+		// TODO Auto-generated method stub
+		contactList.clear();
+		displayContacts();
+	}
 	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.home_page, menu);
+        return true;
+	}
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+        
+        switch (item.getItemId())
+        {
+        case R.id.action_refresh:
+    		contactList.clear();
+    		displayContacts();
+        	return true;
+                    
+        default:
+            return super.onOptionsItemSelected(item);
+        }
+    }
+
 }
