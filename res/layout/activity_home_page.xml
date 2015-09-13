@@ -17,6 +17,14 @@
         android:text="@string/sync"
         android:textColor="#ffffffff"
         android:textStyle="bold" />
+     <Button
+        android:id="@+id/logoutBtn"
+        style="?android:textAppearanceSmall"
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:text="@string/logout"
+        android:textColor="#ffffffff"
+        android:textStyle="bold" />
    <!-- list -->
 
     <ListView
